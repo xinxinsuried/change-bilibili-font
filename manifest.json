@@ -2,13 +2,15 @@
   "manifest_version": 3,
   "name": "Bilibili Minecraft 字体",
   "description": "将 Bilibili 网站的全部字体替换为 Minecraft 像素风格字体",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-  "permissions": ["storage"],
+  "permissions": [
+    "storage"
+  ],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -23,15 +25,22 @@
         "*://*.bilibili.com/*",
         "*://bilibili.com/*"
       ],
-      "js": ["content/content.js"],
+      "js": [
+        "content/content.js"
+      ],
       "run_at": "document_start",
       "all_frames": true
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": ["fonts/*"],
-      "matches": ["*://*.bilibili.com/*", "*://bilibili.com/*"]
+      "resources": [
+        "fonts/*"
+      ],
+      "matches": [
+        "*://*.bilibili.com/*",
+        "*://bilibili.com/*"
+      ]
     }
   ]
 }

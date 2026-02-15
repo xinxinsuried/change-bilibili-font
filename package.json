@@ -1,6 +1,6 @@
 {
   "name": "change-bilibili-font",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "将 Bilibili 网站字体替换为 Minecraft 像素风格字体的浏览器插件",
   "scripts": {
     "dev": "vite",
