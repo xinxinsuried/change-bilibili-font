@@ -1,0 +1,2 @@
+/* 字体通过 content.js 动态注入，因为 content_script CSS 不支持 extension URL 变量 */
+/* 此文件保留为占位，实际 @font-face 在 content.js 中生成 */

@@ -1,0 +1,109 @@
+name: Build and Release Extension
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 自动递增版本号
+        id: version
+        run: |
+          # 读取当前版本
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "当前版本: $CURRENT_VERSION"
+          
+          # 解析版本号
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
+          
+          # 递增 patch 版本
+          PATCH=$((PATCH + 1))
+          NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+          echo "新版本: $NEW_VERSION"
+          
+          # 更新 package.json
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf-8'));
+            pkg.version = '$NEW_VERSION';
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+          "
+          
+          # 更新 manifest.json
+          node -e "
+            const fs = require('fs');
+            const manifest = JSON.parse(fs.readFileSync('manifest.json', 'utf-8'));
+            manifest.version = '$NEW_VERSION';
+            fs.writeFileSync('manifest.json', JSON.stringify(manifest, null, 2) + '\n');
+          "
+          
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+      - name: 生成图标
+        run: node scripts/generate-icons.js
+
+      - name: 构建扩展
+        run: npm run build
+
+      - name: 打包 ZIP
+        run: |
+          cd dist
+          zip -r ../bilibili-minecraft-font-v${{ steps.version.outputs.version }}.zip .
+
+      - name: 提交版本号更新
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add package.json manifest.json
+          git diff --staged --quiet || git commit -m "chore: bump version to v${{ steps.version.outputs.version }}"
+          git push
+
+      - name: 创建 Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: "🎮 Bilibili Minecraft 字体 v${{ steps.version.outputs.version }}"
+          body: |
+            ## Bilibili Minecraft 字体插件 v${{ steps.version.outputs.version }}
+            
+            ### 安装方法
+            1. 下载下方的 `.zip` 文件
+            2. 解压到一个文件夹
+            3. 打开 Chrome，进入 `chrome://extensions/`
+            4. 开启「开发者模式」
+            5. 点击「加载已解压的扩展程序」
+            6. 选择解压后的文件夹
+            
+            ### 功能
+            - ⛏️ 将 Bilibili 全站字体替换为 Minecraft 像素风格
+            - 🀄 支持中文（使用缝合像素字体）
+            - 🔤 支持英文（使用 Minecraft 原版字体）
+            - 🎛️ 可通过弹窗一键开关
+            
+            ### 更新内容
+            - 自动构建版本 v${{ steps.version.outputs.version }}
+          files: |
+            bilibili-minecraft-font-v${{ steps.version.outputs.version }}.zip
+          draft: false
+          prerelease: false
